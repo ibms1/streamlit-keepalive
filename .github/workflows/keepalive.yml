@@ -1,0 +1,31 @@
+name: Keep Streamlit Apps Awake
+
+on:
+  workflow_dispatch:
+  schedule:
+    # كل 8 ساعات بتوقيت السعودية
+    - cron: "17 0,8,16 * * *"
+      timezone: "Asia/Riyadh"
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install --with-deps chromium
+
+      - name: Open Streamlit apps
+        run: node keepalive.js
