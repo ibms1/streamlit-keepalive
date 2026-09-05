@@ -2,22 +2,26 @@ name: Keep Streamlit Apps Awake
 
 on:
   workflow_dispatch:
+
   schedule:
-    # كل 8 ساعات بتوقيت السعودية
     - cron: "17 0,8,16 * * *"
-      timezone: "Asia/Riyadh"
 
 jobs:
   keepalive:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v5
         with:
           node-version: lts/*
 
@@ -29,3 +33,21 @@ jobs:
 
       - name: Open Streamlit apps
         run: node keepalive.js
+
+      - name: Update heartbeat
+        run: |
+          echo "Last keepalive: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > heartbeat.txt
+
+      - name: Commit heartbeat
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add heartbeat.txt
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update keepalive heartbeat"
+            git push
+          fi
